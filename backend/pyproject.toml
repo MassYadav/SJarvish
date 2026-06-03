@@ -1,59 +1,72 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-os-backend"
 version = "0.1.0"
-description = "FastAPI/LangGraph backend for AI Operating System"
-requires-python = ">=3.10"
-authors = [{name = "AI OS Team"}]
+description = "Core backend neural center for AI Operating System"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Core API & Networking
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.1",
+    "pydantic>=2.7.4",
+    "pydantic-settings>=2.3.4",
+    "python-multipart>=0.0.9",
+
+    # AI, Routing & Agent Framework
+    "langgraph>=0.1.4",
+    "langchain>=0.2.6",
+    "langchain-core>=0.2.10",
+    "litellm>=1.40.14",
+    
+    # Memory & Database
+    "chromadb>=0.5.3",
+    "redis>=5.0.7",
+    "sqlalchemy>=2.0.31",
+    "aiosqlite>=0.20.0",
+
+    # MCP (Model Context Protocol)
+    "mcp>=0.1.0",
+    "fastmcp>=0.1.1",
+
+    # Voice & Media Processing
+    "livekit>=0.15.0",
+    "livekit-api>=0.1.0",
+    "livekit-agents>=0.7.0",
+    "faster-whisper>=1.0.2",
+
+    # Security & Encryption
+    "pyjwt>=2.8.0",
+    "cryptography>=42.0.8",
+    "passlib[bcrypt]>=1.7.4",
+    "keyring>=25.2.1",
+
+    # Observability & Logging
+    "prometheus-client>=0.20.0",
+    "structlog>=24.2.0"
+]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0",
-    "black>=23.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0",
+    "pytest>=8.2.2",
+    "pytest-asyncio>=0.23.7",
+    "httpx>=0.27.0",
+    "black>=24.4.2",
+    "isort>=5.13.2",
+    "mypy>=1.10.0"
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-fastapi = "^0.104.0"
-uvicorn = {extras = ["standard"], version = "^0.24.0"}
-pydantic = "^2.0"
-pydantic-settings = "^2.0"
-python-dotenv = "^1.0"
-langgraph = "^0.0.1"
-langchain = "^0.1.0"
-litellm = "^1.0"
-chromadb = "^0.4.0"
-redis = "^5.0"
-sqlalchemy = "^2.0"
-httpx = "^0.25.0"
-websockets = "^12.0"
-prometheus-client = "^0.18.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.0"
-pytest-asyncio = "^0.21.0"
-pytest-cov = "^4.0"
-black = "^23.0"
-ruff = "^0.1.0"
-mypy = "^1.0"
-
 [tool.black]
-line-length = 100
-target-version = ['py310']
+line-length = 88
+target-version = ['py311']
 
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-select = ["E", "F", "I"]
+[tool.isort]
+profile = "black"
+multi_line_output = 3
 
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

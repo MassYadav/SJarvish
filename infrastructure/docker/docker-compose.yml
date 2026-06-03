@@ -2,81 +2,37 @@ version: '3.8'
 
 services:
   redis:
-    image: redis:7-alpine
-    container_name: ai-os-redis
+    image: redis:7.2-alpine
+    container_name: aios-redis
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
-    networks:
-      - ai-os-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
-
   chromadb:
-    image: ghcr.io/chroma-core/chroma:latest
-    container_name: ai-os-chromadb
+    # CHANGE THIS LINE FROM: image: chromadb/chroma:0.5.3
+    image: chromadb/chroma:latest     # <--- To this
+    container_name: aios-chromadb
     ports:
       - "8000:8000"
-    environment:
-      - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma/data
-    volumes:
-      - chromadb_data:/chroma/data
-    networks:
-      - ai-os-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # ... rest of the file stays the same  
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: ai-os-postgres
-    environment:
-      POSTGRES_USER: ai_os
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ai_os
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ai-os-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ai_os"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   prometheus:
-    image: prom/prometheus:latest
-    container_name: ai-os-prometheus
+    image: prom/prometheus:v2.53.0
+    container_name: aios-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    networks:
-      - ai-os-network
-    depends_on:
-      - redis
-      - chromadb
+    restart: unless-stopped
 
 volumes:
   redis_data:
   chromadb_data:
-  postgres_data:
   prometheus_data:
-
-networks:
-  ai-os-network:
-    driver: bridge
