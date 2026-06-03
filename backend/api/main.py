@@ -13,6 +13,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.config import settings
 from memory.db_manager import db
 from core.security.auth import create_access_token, get_current_user
+from llm.litellm_router.router import llm_router
+from memory.service import memory_vault
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +54,6 @@ app.add_middleware(
 # ---------------------------------------------------------
 @app.get("/health")
 async def health_check():
-    """Public endpoint to verify the API and memory connections are alive."""
     return {
         "status": "online",
         "environment": settings.ENVIRONMENT,
@@ -63,22 +64,13 @@ async def health_check():
 
 @app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Authenticates a user and returns a JWT token.
-    For development, we use a hardcoded admin password.
-    """
-    # In a production environment, this would check a database hash
-    # For our local AI OS, we verify against the master password
     if form_data.password != "admin123":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Generate the encrypted token payload
     access_token = create_access_token(data={"sub": form_data.username})
-    
     return {"access_token": access_token, "token_type": "bearer"}
 
 # ---------------------------------------------------------
@@ -86,15 +78,42 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 # ---------------------------------------------------------
 @app.get("/api/v1/system/status")
 async def secure_system_status(current_user: dict = Depends(get_current_user)):
-    """
-    A protected route. If you don't pass a valid JWT token in the header, 
-    FastAPI will automatically block the request and return a 401 error.
-    """
     return {
         "message": "Access Granted",
         "user": current_user["username"],
         "system_state": "All core modules online and secure."
     }
+
+@app.post("/api/v1/llm/test-route")
+async def test_llm_routing(prompt: str, current_user: dict = Depends(get_current_user)):
+    """Validates the high-availability failover chain execution engine."""
+    payload = [{"role": "user", "content": prompt}]
+    result = await llm_router.generate_reply(messages=payload)
+    return result
+
+@app.post("/api/v1/memory/short-term")
+async def add_short_term_memory(session_id: str, role: str, content: str, current_user: dict = Depends(get_current_user)):
+    """Appends sequential records to high-speed working cache storage."""
+    await memory_vault.store_chat_message(session_id=session_id, role=role, content=content)
+    return {"status": "success", "message": "Frame appended to short term history buffer."}
+
+@app.get("/api/v1/memory/short-term/{session_id}")
+async def get_short_term_memory(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Fetches the sliding history window array from Redis."""
+    history = await memory_vault.retrieve_context_window(session_id=session_id)
+    return {"session_id": session_id, "history": history}
+
+@app.post("/api/v1/memory/long-term")
+async def add_long_term_memory(facts: str, category: str, current_user: dict = Depends(get_current_user)):
+    """Indexes deep factual structures inside the persistent vector cortex."""
+    uuid_ref = await memory_vault.commit_to_long_term(facts=facts, metadata={"category": category})
+    return {"status": "success", "memory_id": uuid_ref}
+
+@app.get("/api/v1/memory/long-term/search")
+async def search_long_term_memory(query: str, current_user: dict = Depends(get_current_user)):
+    """Executes high-performance distance query logic across semantic memories."""
+    matches = await memory_vault.recall_semantic_memories(inquiry=query)
+    return {"query": query, "matches": matches}
 
 if __name__ == "__main__":
     uvicorn.run(
