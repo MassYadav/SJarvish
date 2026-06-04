@@ -20,7 +20,7 @@ class LLMRouter:
     def __init__(self):
         # Explicit master hierarchy chain for your JARVIS-tier OS
         self.fallback_chain = [
-            {"provider": "gemini", "model": "gemini/gemini-1.5-pro"},
+            {"provider": "gemini", "model": "gemini/gemini-1.5-flash-latest"},
             {"provider": "openai", "model": "azure/gpt-4o" if "azure" in settings.REDIS_URL else "openai/gpt-4o"},
             {"provider": "anthropic", "model": "anthropic/claude-3-5-sonnet"},
             {"provider": "groq", "model": "groq/llama3-70b-8192"},
@@ -92,7 +92,7 @@ class LLMRouter:
                     "model": model_string,
                     "messages": messages,
                     "temperature": temperature,
-                    "timeout": 15.0 # Guardrail timeout before executing chain-failover
+                    "timeout": 60.0 # Guardrail timeout before executing chain-failover
                 }
                 
                 if api_key:
